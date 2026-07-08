@@ -403,6 +403,11 @@
       min-height: 100%;
     }
 
+    .move-card.highlight {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(19, 121, 91, 0.16);
+    }
+
     .move-figure {
       min-height: 154px;
       background: linear-gradient(135deg, #eef4f0, #f8fbf9);
@@ -1204,11 +1209,7 @@
 
       document.querySelectorAll("[data-jump]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          const card = document.getElementById(`move-${btn.dataset.jump}`);
-          if (card) {
-            card.scrollIntoView({ behavior: "smooth", block: "center" });
-            card.querySelector("details").open = true;
-          }
+          jumpToExercise(btn.dataset.jump);
         });
       });
     }
@@ -1282,11 +1283,16 @@
       )).join("");
       document.querySelectorAll(".filter-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
-          document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-          renderLibrary(btn.dataset.cat);
+          setActiveFilter(btn.dataset.cat);
         });
       });
+    }
+
+    function setActiveFilter(cat) {
+      document.querySelectorAll(".filter-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.cat === cat);
+      });
+      renderLibrary(cat);
     }
 
     function renderLibrary(cat = "全部") {
@@ -1311,6 +1317,24 @@
           </div>
         </article>
       `).join("");
+    }
+
+    function jumpToExercise(id) {
+      const exercise = exercises.find((item) => item.id === id);
+      if (!exercise) return;
+
+      let card = document.getElementById(`move-${id}`);
+      if (!card) {
+        setActiveFilter(exercise.cat);
+        card = document.getElementById(`move-${id}`);
+      }
+      if (!card) return;
+
+      document.querySelectorAll(".move-card.highlight").forEach((item) => item.classList.remove("highlight"));
+      card.classList.add("highlight");
+      const details = card.querySelector("details");
+      if (details) details.open = true;
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
     function todayISO() {
