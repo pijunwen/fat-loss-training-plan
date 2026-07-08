@@ -316,6 +316,41 @@
       font-size: 13px;
     }
 
+    .item-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .choice-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #edf6f2;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .choice-badge.optional {
+      background: var(--orange-2);
+      color: var(--orange);
+    }
+
+    .choice-badge.choice {
+      background: var(--blue-2);
+      color: var(--blue);
+    }
+
+    .choice-note {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     .exercise-item.done {
       background: var(--green-2);
       border-color: #bbddcf;
@@ -1111,11 +1146,22 @@
         const inputType = isRadio ? "radio" : "checkbox";
         const inputName = isRadio ? `name="choice-${radioGroup}"` : "";
         const actionButton = exerciseIds.has(id) ? `<button class="btn" type="button" data-jump="${id}">看动作</button>` : "";
+        const isOptional = /^可选/.test(name) || /可选/.test(reps);
+        const inlineChoice = /二选一|任选|可替代/.test(name);
+        const choiceLabel = day.choiceMode ? `${day.items.length}选一` : (isRadio || inlineChoice ? "二选一" : (isOptional ? "可选" : "必做"));
+        const choiceClass = isRadio || day.choiceMode || inlineChoice ? "choice" : (isOptional ? "optional" : "");
+        const cleanName = name.replace(/^选项 [A-Z]：/, "").replace(/^可选：/, "");
+        const optionMatch = name.match(/^选项 ([A-Z])：/);
+        const choiceNote = optionMatch ? `<span class="choice-note">选项 ${optionMatch[1]}</span>` : "";
         return `
           <li class="exercise-item ${done[doneKey] ? "done" : ""}">
             <input type="${inputType}" ${inputName} ${done[doneKey] ? "checked" : ""} data-done-key="${doneKey}" data-choice-group="${isRadio ? radioGroup : ""}" aria-label="标记 ${name} 完成" />
             <div>
-              <strong>${name}</strong>
+              <div class="item-title">
+                <span class="choice-badge ${choiceClass}">${choiceLabel}</span>
+                <strong>${cleanName}</strong>
+                ${choiceNote}
+              </div>
               <div class="meta">${reps}</div>
             </div>
             ${actionButton}
