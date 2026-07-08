@@ -902,12 +902,13 @@
       {
         key: "sat",
         day: "周六",
-        title: "有氧/快走",
-        focus: "补消耗，不把自己练崩。可以户外快走。",
+        title: "有氧/快走：任选一项",
+        focus: "补消耗，不把自己练崩。下面三项是或的关系，选一项完成即可。",
+        choiceMode: true,
         items: [
-          ["坡走", "45-60 分钟", "incline-walk"],
-          ["单车", "可替代 40-50 分钟", "bike"],
-          ["当天总步数", "8000-10000 步", "steps"]
+          ["选项 A：坡走", "45-60 分钟", "incline-walk"],
+          ["选项 B：单车", "40-50 分钟", "bike"],
+          ["选项 C：当天总步数", "8000-10000 步", "steps"]
         ]
       },
       {
@@ -1100,9 +1101,11 @@
 
       const items = day.items.map(([name, reps, id], index) => {
         const doneKey = `${day.key}-${index}-${id}`;
+        const inputType = day.choiceMode ? "radio" : "checkbox";
+        const inputName = day.choiceMode ? `name="choice-${day.key}"` : "";
         return `
           <li class="exercise-item ${done[doneKey] ? "done" : ""}">
-            <input type="checkbox" ${done[doneKey] ? "checked" : ""} data-done-key="${doneKey}" aria-label="标记 ${name} 完成" />
+            <input type="${inputType}" ${inputName} ${done[doneKey] ? "checked" : ""} data-done-key="${doneKey}" aria-label="标记 ${name} 完成" />
             <div>
               <strong>${name}</strong>
               <div class="meta">${reps}</div>
@@ -1126,6 +1129,15 @@
       document.querySelectorAll("[data-done-key]").forEach((box) => {
         box.addEventListener("change", (event) => {
           const latest = readJson(STORAGE_KEYS.done, {});
+          if (day.choiceMode) {
+            Object.keys(latest).forEach((key) => {
+              if (key.startsWith(`${day.key}-`)) delete latest[key];
+            });
+            latest[event.target.dataset.doneKey] = true;
+            writeJson(STORAGE_KEYS.done, latest);
+            renderWorkout(day.key);
+            return;
+          }
           latest[event.target.dataset.doneKey] = event.target.checked;
           writeJson(STORAGE_KEYS.done, latest);
           event.target.closest(".exercise-item").classList.toggle("done", event.target.checked);
