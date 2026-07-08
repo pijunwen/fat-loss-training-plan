@@ -654,6 +654,7 @@
       </div>
       <nav class="nav" aria-label="页面导航">
         <a href="#overview" class="active">目标总览</a>
+        <a href="#timing">时间点</a>
         <a href="#schedule">周训练</a>
         <a href="#nutrition">饮食</a>
         <a href="#library">动作库</a>
@@ -699,7 +700,7 @@
           <h2>执行原则</h2>
           <small>不要靠硬饿</small>
         </div>
-        <div class="grid-3">
+        <div class="grid-2">
           <div class="callout">
             <strong>训练优先级</strong><br />
             先把动作做标准，再加重量。每组保留 2-3 次余力，不做极限 1RM。
@@ -711,6 +712,40 @@
           <div class="callout warn">
             <strong>腿部策略</strong><br />
             可以不重练腿，但不建议完全不练。每周一次腿臀维护，防止体态和力量失衡。
+          </div>
+          <div class="callout">
+            <strong>胸部策略</strong><br />
+            目标是上胸线条和体态，不追大重量卧推。胸部保持低中等训练量，重点做上斜推和稳定控制。
+          </div>
+        </div>
+      </section>
+
+      <section id="timing" class="panel">
+        <div class="section-title">
+          <h2>训练时间点</h2>
+          <small>默认按工作日晚间安排</small>
+        </div>
+        <div class="grid-2 rules">
+          <div>
+            <h3>推荐时间表</h3>
+            <ul>
+              <li>周一 19:00-20:15：上肢推。</li>
+              <li>周二 19:00-20:10：上肢拉。</li>
+              <li>周三 20:30-21:15：恢复有氧，不追强度。</li>
+              <li>周四 19:00-20:10：上肢综合。</li>
+              <li>周五 19:00-20:10：腿臀维护 + 核心。</li>
+              <li>周六 10:00-11:00 或 16:00-17:00：有氧/快走任选一项。</li>
+              <li>周日：休息；只保留轻松散步。</li>
+            </ul>
+          </div>
+          <div>
+            <h3>当天怎么调整</h3>
+            <ul>
+              <li>训练前 60-90 分钟吃一小份主食 + 蛋白质，例如香蕉 + 牛奶/酸奶。</li>
+              <li>训练结束后 1 小时内吃正餐，优先蛋白质和蔬菜，主食按当天饥饿程度调整。</li>
+              <li>如果只能 21:00 后开始，把力量训练缩到 45 分钟，取消可选有氧。</li>
+              <li>如果连续两天睡眠差，把当天训练改成坡走或休息，不硬顶重量。</li>
+            </ul>
           </div>
         </div>
       </section>
@@ -882,11 +917,11 @@
       {
         key: "mon",
         day: "周一",
-        title: "上肢推：胸、肩、三头",
-        focus: "推胸、肩推、侧平举、三头。控制肩胛稳定，动作慢一点。",
+        title: "上肢推：上胸、肩、三头",
+        focus: "胸部不追大重量卧推。用上斜推和器械推胸做线条维护，动作慢、肩胛稳定、不要把重量推到变形。",
         items: [
-          ["器械推胸/卧推（二选一）", "3 组 x 8-12 次", "chest-press"],
-          ["哑铃上斜卧推", "3 组 x 10-12 次", "incline-db-press"],
+          ["上斜器械推胸/普通推胸（二选一）", "2-3 组 x 10-12 次", "chest-press"],
+          ["哑铃上斜推胸", "2 组 x 10-12 次", "incline-db-press"],
           ["哑铃肩推", "3 组 x 8-12 次", "shoulder-press"],
           ["侧平举", "3 组 x 12-15 次", "lateral-raise"],
           ["绳索下压", "3 组 x 10-15 次", "triceps-pushdown"]
@@ -920,9 +955,9 @@
         key: "thu",
         day: "周四",
         title: "上肢综合：胸背肩",
-        focus: "比周一周二略轻，动作覆盖全面，保持训练量。",
+        focus: "胸部只做轻量维护，重点放在背部、肩部和姿态。不要把这天练成第二个胸部日。",
         items: [
-          ["器械推胸", "3 组 x 8-12 次", "chest-press"],
+          ["可选：器械推胸轻量维护", "2 组 x 12-15 次", "chest-press"],
           ["高位下拉", "3 组 x 8-12 次", "lat-pulldown"],
           ["坐姿划船", "3 组 x 10-12 次", "seated-row"],
           ["侧平举", "3 组 x 12-15 次", "lateral-raise"],
@@ -971,17 +1006,17 @@
       {
         id: "chest-press",
         cat: "胸肩",
-        name: "器械推胸 / 卧推",
-        en: "Machine Chest Press / Bench Press",
+        name: "上斜器械推胸 / 普通推胸",
+        en: "Incline Machine Chest Press / Machine Chest Press",
         muscle: "胸大肌、前三角、三头",
-        equipment: "推胸机、史密斯机或卧推架",
-        cue: "肩胛微收，手柄在胸中线附近，推起时肘不要完全锁死。",
-        mistakes: "肩膀耸起、手腕折太多、下放太浅、重量过大导致腰弓过高。"
+        equipment: "上斜推胸机、推胸机或史密斯机",
+        cue: "优先选上斜推胸。肩胛微收，手柄在上胸到胸中线附近，推起时肘不要完全锁死。",
+        mistakes: "追大重量、肩膀耸起、手腕折太多、下放太浅、腰弓过高。"
       },
       {
         id: "incline-db-press",
         cat: "胸肩",
-        name: "哑铃上斜卧推",
+        name: "哑铃上斜推胸",
         en: "Incline Dumbbell Press",
         muscle: "上胸、前三角、三头",
         equipment: "可调凳、哑铃",
