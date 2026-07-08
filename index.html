@@ -680,6 +680,9 @@
           <h2>每周训练计划</h2>
           <small>点击日期切换，勾选会自动保存</small>
         </div>
+        <div class="callout" style="margin-bottom: 14px;">
+          <strong>完成规则：</strong>力量训练日列出的动作基本都做；有氧/恢复日按页面里的单选项任选其一；写着“或 / 任选 / 可替代”的内容都是替代关系，不是叠加任务。
+        </div>
         <div class="tabs" id="dayTabs"></div>
         <div id="workoutView"></div>
       </section>
@@ -842,7 +845,7 @@
         title: "上肢推：胸、肩、三头",
         focus: "推胸、肩推、侧平举、三头。控制肩胛稳定，动作慢一点。",
         items: [
-          ["器械推胸或卧推", "3 组 x 8-12 次", "chest-press"],
+          ["器械推胸/卧推（二选一）", "3 组 x 8-12 次", "chest-press"],
           ["哑铃上斜卧推", "3 组 x 10-12 次", "incline-db-press"],
           ["哑铃肩推", "3 组 x 8-12 次", "shoulder-press"],
           ["侧平举", "3 组 x 12-15 次", "lateral-raise"],
@@ -853,24 +856,24 @@
         key: "tue",
         day: "周二",
         title: "上肢拉：背、后束、二头",
-        focus: "背部发力优先，不要耸肩。每次拉到胸前或肋骨附近，顶峰停 1 秒。",
+        focus: "背部发力优先，不要耸肩。每次拉到胸前或肋骨附近，顶峰停 1 秒；最后坡走是可选收尾。",
         items: [
           ["高位下拉", "3 组 x 8-12 次", "lat-pulldown"],
           ["坐姿划船", "3 组 x 8-12 次", "seated-row"],
           ["面拉", "3 组 x 12-15 次", "face-pull"],
           ["哑铃弯举", "3 组 x 10-15 次", "db-curl"],
-          ["坡走", "15-20 分钟", "incline-walk"]
+          ["可选：坡走", "15-20 分钟", "incline-walk"]
         ]
       },
       {
         key: "wed",
         day: "周三",
-        title: "低强度有氧 + 拉伸",
-        focus: "恢复日。强度不要冲太高，让周四还能正常练。",
+        title: "恢复有氧：有氧二选一 + 拉伸",
+        focus: "恢复日。坡走和椭圆机二选一；拉伸是建议项，做 10 分钟即可。",
         items: [
-          ["坡走", "35-45 分钟", "incline-walk"],
-          ["椭圆机", "可替代 30-40 分钟", "elliptical"],
-          ["髋屈肌/胸椎/背阔肌拉伸", "10 分钟", "mobility"]
+          ["选项 A：坡走", "35-45 分钟", "incline-walk", "radio", "wed-cardio"],
+          ["选项 B：椭圆机", "30-40 分钟", "elliptical", "radio", "wed-cardio"],
+          ["建议：髋屈肌/胸椎/背阔肌拉伸", "10 分钟", "mobility"]
         ]
       },
       {
@@ -883,7 +886,8 @@
           ["高位下拉", "3 组 x 8-12 次", "lat-pulldown"],
           ["坐姿划船", "3 组 x 10-12 次", "seated-row"],
           ["侧平举", "3 组 x 12-15 次", "lateral-raise"],
-          ["绳索下压或哑铃弯举", "各 2 组", "arms"]
+          ["选项 A：绳索下压", "2 组 x 10-15 次", "triceps-pushdown", "radio", "thu-arm"],
+          ["选项 B：哑铃弯举", "2 组 x 10-15 次", "db-curl", "radio", "thu-arm"]
         ]
       },
       {
@@ -895,7 +899,7 @@
           ["腿举", "3 组 x 8-12 次", "leg-press"],
           ["罗马尼亚硬拉", "3 组 x 8-10 次", "romanian-deadlift"],
           ["腿弯举", "3 组 x 10-12 次", "leg-curl"],
-          ["髋推或臀桥", "2-3 组 x 10-12 次", "hip-thrust"],
+          ["髋推/臀桥（二选一）", "2-3 组 x 10-12 次", "hip-thrust"],
           ["平板支撑", "3 组 x 30-60 秒", "plank"]
         ]
       },
@@ -1097,20 +1101,24 @@
     function renderWorkout(dayKey = workouts[0].key) {
       const day = workouts.find((w) => w.key === dayKey) || workouts[0];
       const done = readJson(STORAGE_KEYS.done, {});
+      const exerciseIds = new Set(exercises.map((exercise) => exercise.id));
       document.querySelectorAll(".tab").forEach((btn) => btn.classList.toggle("active", btn.dataset.day === day.key));
 
-      const items = day.items.map(([name, reps, id], index) => {
+      const items = day.items.map(([name, reps, id, mode, group], index) => {
         const doneKey = `${day.key}-${index}-${id}`;
-        const inputType = day.choiceMode ? "radio" : "checkbox";
-        const inputName = day.choiceMode ? `name="choice-${day.key}"` : "";
+        const isRadio = day.choiceMode || mode === "radio";
+        const radioGroup = group || day.key;
+        const inputType = isRadio ? "radio" : "checkbox";
+        const inputName = isRadio ? `name="choice-${radioGroup}"` : "";
+        const actionButton = exerciseIds.has(id) ? `<button class="btn" type="button" data-jump="${id}">看动作</button>` : "";
         return `
           <li class="exercise-item ${done[doneKey] ? "done" : ""}">
-            <input type="${inputType}" ${inputName} ${done[doneKey] ? "checked" : ""} data-done-key="${doneKey}" aria-label="标记 ${name} 完成" />
+            <input type="${inputType}" ${inputName} ${done[doneKey] ? "checked" : ""} data-done-key="${doneKey}" data-choice-group="${isRadio ? radioGroup : ""}" aria-label="标记 ${name} 完成" />
             <div>
               <strong>${name}</strong>
               <div class="meta">${reps}</div>
             </div>
-            <button class="btn" type="button" data-jump="${id}">看动作</button>
+            ${actionButton}
           </li>
         `;
       }).join("");
@@ -1129,9 +1137,13 @@
       document.querySelectorAll("[data-done-key]").forEach((box) => {
         box.addEventListener("change", (event) => {
           const latest = readJson(STORAGE_KEYS.done, {});
-          if (day.choiceMode) {
+          const choiceGroup = event.target.dataset.choiceGroup;
+          if (choiceGroup) {
             Object.keys(latest).forEach((key) => {
-              if (key.startsWith(`${day.key}-`)) delete latest[key];
+              const sameGroup = day.items.some(([itemName, itemReps, itemId, itemMode, itemGroup], itemIndex) => {
+                return (itemGroup || day.key) === choiceGroup && key === `${day.key}-${itemIndex}-${itemId}`;
+              });
+              if (sameGroup) delete latest[key];
             });
             latest[event.target.dataset.doneKey] = true;
             writeJson(STORAGE_KEYS.done, latest);
