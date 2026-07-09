@@ -653,13 +653,13 @@
         <p>8-10 周执行版</p>
       </div>
       <nav class="nav" aria-label="页面导航">
-        <a href="#overview" class="active">目标总览</a>
-        <a href="#timing">时间点</a>
-        <a href="#schedule">周训练</a>
+        <a href="#overview" class="active">今日</a>
+        <a href="#weekly">本周</a>
+        <a href="#schedule">训练</a>
         <a href="#nutrition">饮食</a>
-        <a href="#library">动作库</a>
-        <a href="#tracker">记录</a>
-        <a href="#sources">依据</a>
+        <a href="#tracker">进度</a>
+        <a href="#library">动作</a>
+        <a href="#sources">说明</a>
       </nav>
     </aside>
 
@@ -679,18 +679,40 @@
         </div>
         <div class="panel">
           <div class="section-title">
-            <h2>关键指标</h2>
-            <small>每周看 7 日均重</small>
+            <h2>今日卡片</h2>
+            <small>打开先看今天做什么</small>
           </div>
-          <div class="stat-grid">
-            <div class="stat"><b>8-10 周</b><span>计划周期</span></div>
-            <div class="stat"><b>0.4-0.6kg</b><span>推荐周下降</span></div>
-            <div class="stat"><b>4 练</b><span>每周力量训练</span></div>
-            <div class="stat"><b>2 次</b><span>低强度有氧/快走</span></div>
-          </div>
+          <div id="todayCard" class="today-card"></div>
           <div class="print-actions">
             <button class="btn primary" id="printBtn" type="button">打印 / 保存 PDF</button>
             <button class="btn" id="expandAllBtn" type="button">展开动作详情</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="weekly" class="panel">
+        <div class="section-title">
+          <h2>本周概览</h2>
+          <small>先看执行，再谈调整</small>
+        </div>
+        <div class="grid-2">
+          <div>
+            <div class="stat-grid">
+              <div class="stat"><b id="strengthProgress">0 / 4</b><span>力量完成</span></div>
+              <div class="stat"><b id="cardioProgress">0 / 2</b><span>有氧完成</span></div>
+              <div class="stat"><b id="weekCompletion">0%</b><span>本周完成率</span></div>
+              <div class="stat"><b id="weekWeightDelta">--</b><span>7 日均重变化</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="callout" id="weeklySummary">
+              <strong>本周节奏</strong><br />
+              先保证 4 次力量训练，再用低强度有氧和步数补消耗。
+            </div>
+            <div class="callout" id="adjustmentCard" style="margin-top: 12px;">
+              <strong>本周调整建议</strong><br />
+              数据不足时先专注执行，至少连续记录 7 天再调整热量。
+            </div>
           </div>
         </div>
       </section>
@@ -856,15 +878,32 @@
 
       <section id="tracker" class="panel">
         <div class="section-title">
-          <h2>体重记录</h2>
+          <h2>进度记录</h2>
           <small>数据保存在当前浏览器</small>
         </div>
         <form class="tracker" id="trackerForm">
           <label><span>日期</span><input type="date" id="dateInput" required /></label>
-          <label><span>体重 kg</span><input type="number" id="weightInput" min="45" max="80" step="0.1" placeholder="填写当天体重" required /></label>
-          <label><span>备注</span><input type="text" id="noteInput" placeholder="训练/饮食/睡眠" /></label>
+          <label><span>体重 kg</span><input type="number" id="weightInput" min="45" max="100" step="0.1" placeholder="填写当天体重" required /></label>
+          <label>
+            <span>睡眠</span>
+            <select id="sleepInput">
+              <option value="">未记录</option>
+              <option value="好">好</option>
+              <option value="一般">一般</option>
+              <option value="差">差</option>
+            </select>
+          </label>
+          <label><span>备注</span><input type="text" id="noteInput" placeholder="训练/饮食/恢复情况" /></label>
           <button class="btn primary" type="submit">保存记录</button>
         </form>
+        <div class="grid-2" style="margin-top: 12px;">
+          <div class="stat"><b id="recordCount">0</b><span>已记录天数</span></div>
+          <div class="stat"><b id="avgWeight">--</b><span>最近 7 日均重</span></div>
+        </div>
+        <div class="callout" id="trendSummary" style="margin-top: 12px;">
+          <strong>趋势摘要</strong><br />
+          暂无足够数据，先连续记录 7 天体重。
+        </div>
         <div class="print-actions">
           <button class="btn" id="exportBtn" type="button">导出 JSON</button>
           <button class="btn danger" id="clearBtn" type="button">清空本地记录</button>
@@ -872,7 +911,7 @@
         <div style="overflow:auto; margin-top: 12px;">
           <table>
             <thead>
-              <tr><th>日期</th><th>体重</th><th>备注</th><th>判断</th></tr>
+              <tr><th>日期</th><th>体重</th><th>睡眠</th><th>备注</th><th>判断</th></tr>
             </thead>
             <tbody id="trackerRows"></tbody>
           </table>
@@ -912,8 +951,9 @@
 
   <script>
     const STORAGE_KEYS = {
-      done: "fatLossPlan.done.v1",
-      records: "fatLossPlan.records.v1"
+      done: "fatLossPlan.done.v2",
+      records: "fatLossPlan.records.v2",
+      mode: "fatLossPlan.mode.v1"
     };
 
     const workouts = [
@@ -922,86 +962,139 @@
         day: "周一",
         title: "上肢推：上胸、肩、三头",
         focus: "胸部不追大重量卧推。用上斜推和器械推胸做线条维护，动作慢、肩胛稳定、不要把重量推到变形。",
-        items: [
-          ["上斜器械推胸/普通推胸（二选一）", "2-3 组 x 10-12 次", "chest-press"],
-          ["哑铃上斜推胸", "2 组 x 10-12 次", "incline-db-press"],
-          ["哑铃肩推", "3 组 x 8-12 次", "shoulder-press"],
-          ["侧平举", "3 组 x 12-15 次", "lateral-raise"],
-          ["绳索下压", "3 组 x 10-15 次", "triceps-pushdown"]
-        ]
+        modes: {
+          full: [
+            ["上斜器械推胸/普通推胸（二选一）", "2-3 组 x 10-12 次", "chest-press"],
+            ["哑铃上斜推胸", "2 组 x 10-12 次", "incline-db-press"],
+            ["哑铃肩推", "3 组 x 8-12 次", "shoulder-press"],
+            ["侧平举", "3 组 x 12-15 次", "lateral-raise"],
+            ["绳索下压", "3 组 x 10-15 次", "triceps-pushdown"]
+          ],
+          lite: [
+            ["哑铃上斜推胸", "2 组 x 10-12 次", "incline-db-press"],
+            ["哑铃肩推", "2 组 x 8-12 次", "shoulder-press"],
+            ["侧平举", "2 组 x 12-15 次", "lateral-raise"]
+          ]
+        },
+        minimum: "最低完成标准：上斜推胸 + 肩推 + 侧平举。"
       },
       {
         key: "tue",
         day: "周二",
         title: "上肢拉：背、后束、二头",
         focus: "背部发力优先，不要耸肩。每次拉到胸前或肋骨附近，顶峰停 1 秒；最后坡走是可选收尾。",
-        items: [
-          ["高位下拉", "3 组 x 8-12 次", "lat-pulldown"],
-          ["坐姿划船", "3 组 x 8-12 次", "seated-row"],
-          ["面拉", "3 组 x 12-15 次", "face-pull"],
-          ["哑铃弯举", "3 组 x 10-15 次", "db-curl"],
-          ["可选：坡走", "15-20 分钟", "incline-walk"]
-        ]
+        modes: {
+          full: [
+            ["高位下拉", "3 组 x 8-12 次", "lat-pulldown"],
+            ["坐姿划船", "3 组 x 8-12 次", "seated-row"],
+            ["面拉", "3 组 x 12-15 次", "face-pull"],
+            ["哑铃弯举", "3 组 x 10-15 次", "db-curl"],
+            ["可选：坡走", "15-20 分钟", "incline-walk"]
+          ],
+          lite: [
+            ["高位下拉", "2 组 x 8-12 次", "lat-pulldown"],
+            ["坐姿划船", "2 组 x 8-12 次", "seated-row"],
+            ["面拉", "2 组 x 12-15 次", "face-pull"]
+          ]
+        },
+        minimum: "最低完成标准：高位下拉 + 坐姿划船 + 面拉。"
       },
       {
         key: "wed",
         day: "周三",
         title: "恢复有氧：有氧二选一 + 拉伸",
         focus: "恢复日。坡走和椭圆机二选一；拉伸是建议项，做 10 分钟即可。",
-        items: [
-          ["选项 A：坡走", "35-45 分钟", "incline-walk", "radio", "wed-cardio"],
-          ["选项 B：椭圆机", "30-40 分钟", "elliptical", "radio", "wed-cardio"],
-          ["建议：髋屈肌/胸椎/背阔肌拉伸", "10 分钟", "mobility"]
-        ]
+        modes: {
+          full: [
+            ["选项 A：坡走", "35-45 分钟", "incline-walk", "radio", "wed-cardio"],
+            ["选项 B：椭圆机", "30-40 分钟", "elliptical", "radio", "wed-cardio"],
+            ["建议：髋屈肌/胸椎/背阔肌拉伸", "10 分钟", "mobility"]
+          ],
+          lite: [
+            ["选项 A：坡走", "25-30 分钟", "incline-walk", "radio", "wed-cardio-lite"],
+            ["选项 B：椭圆机", "20-25 分钟", "elliptical", "radio", "wed-cardio-lite"]
+          ]
+        },
+        minimum: "最低完成标准：完成一项低强度有氧。"
       },
       {
         key: "thu",
         day: "周四",
-        title: "上肢综合：胸背肩",
-        focus: "胸部只做轻量维护，重点放在背部、肩部和姿态。不要把这天练成第二个胸部日。",
-        items: [
-          ["可选：器械推胸轻量维护", "2 组 x 12-15 次", "chest-press"],
-          ["高位下拉", "3 组 x 8-12 次", "lat-pulldown"],
-          ["坐姿划船", "3 组 x 10-12 次", "seated-row"],
-          ["侧平举", "3 组 x 12-15 次", "lateral-raise"],
-          ["选项 A：绳索下压", "2 组 x 10-15 次", "triceps-pushdown", "radio", "thu-arm"],
-          ["选项 B：哑铃弯举", "2 组 x 10-15 次", "db-curl", "radio", "thu-arm"]
-        ]
+        title: "上肢补强：肩背优先，胸部轻维护",
+        focus: "把周四改成补强日，不再平均分配刺激。优先肩背体态，胸部只做轻量维护。",
+        modes: {
+          full: [
+            ["可选：器械推胸轻量维护", "2 组 x 12-15 次", "chest-press"],
+            ["高位下拉", "3 组 x 8-12 次", "lat-pulldown"],
+            ["坐姿划船", "3 组 x 10-12 次", "seated-row"],
+            ["侧平举", "3 组 x 12-15 次", "lateral-raise"],
+            ["选项 A：绳索下压", "2 组 x 10-15 次", "triceps-pushdown", "radio", "thu-arm"],
+            ["选项 B：哑铃弯举", "2 组 x 10-15 次", "db-curl", "radio", "thu-arm"]
+          ],
+          lite: [
+            ["高位下拉", "2 组 x 8-12 次", "lat-pulldown"],
+            ["坐姿划船", "2 组 x 10-12 次", "seated-row"],
+            ["侧平举", "2 组 x 12-15 次", "lateral-raise"]
+          ]
+        },
+        minimum: "最低完成标准：高位下拉 + 划船 + 侧平举。"
       },
       {
         key: "fri",
         day: "周五",
         title: "腿臀维护 + 核心",
-        focus: "不是重练腿。目标是保留下肢力量、臀腿线条和关节稳定。",
-        items: [
-          ["腿举", "3 组 x 8-12 次", "leg-press"],
-          ["罗马尼亚硬拉", "3 组 x 8-10 次", "romanian-deadlift"],
-          ["腿弯举", "3 组 x 10-12 次", "leg-curl"],
-          ["髋推/臀桥（二选一）", "2-3 组 x 10-12 次", "hip-thrust"],
-          ["平板支撑", "3 组 x 30-60 秒", "plank"]
-        ]
+        focus: "不是重练腿。目标是保留下肢力量、臀腿线条和关节稳定，这天要尽量做得更轻、更稳、更容易完成。",
+        modes: {
+          full: [
+            ["腿举", "3 组 x 8-12 次", "leg-press"],
+            ["选项 A：罗马尼亚硬拉", "3 组 x 8-10 次", "romanian-deadlift", "radio", "fri-hinge"],
+            ["选项 B：腿弯举", "3 组 x 10-12 次", "leg-curl", "radio", "fri-hinge"],
+            ["髋推/臀桥（二选一）", "2-3 组 x 10-12 次", "hip-thrust"],
+            ["平板支撑", "3 组 x 30-60 秒", "plank"]
+          ],
+          lite: [
+            ["腿举", "2 组 x 8-12 次", "leg-press"],
+            ["髋推/臀桥（二选一）", "2 组 x 10-12 次", "hip-thrust"],
+            ["平板支撑", "2 组 x 30-45 秒", "plank"]
+          ]
+        },
+        minimum: "最低完成标准：腿举 + 臀桥 + 核心。"
       },
       {
         key: "sat",
         day: "周六",
-        title: "有氧/快走：任选一项",
+        title: "有氧 / 步数补足：任选一项",
         focus: "补消耗，不把自己练崩。下面三项是或的关系，选一项完成即可。",
         choiceMode: true,
-        items: [
-          ["选项 A：坡走", "45-60 分钟", "incline-walk"],
-          ["选项 B：单车", "40-50 分钟", "bike"],
-          ["选项 C：当天总步数", "8000-10000 步", "steps"]
-        ]
+        modes: {
+          full: [
+            ["选项 A：坡走", "45-60 分钟", "incline-walk"],
+            ["选项 B：单车", "40-50 分钟", "bike"],
+            ["选项 C：当天总步数", "8000-10000 步", "steps"]
+          ],
+          lite: [
+            ["选项 A：坡走", "30-40 分钟", "incline-walk"],
+            ["选项 B：单车", "25-35 分钟", "bike"],
+            ["选项 C：当天总步数", "7000-9000 步", "steps"]
+          ]
+        },
+        minimum: "最低完成标准：完成一项有氧或达到保底步数。"
       },
       {
         key: "sun",
         day: "周日",
         title: "休息",
         focus: "睡眠、补水、轻松散步。准备下一周。",
-        items: [
-          ["轻松步行", "可选 20-30 分钟", "steps"],
-          ["拉伸", "可选 10 分钟", "mobility"]
-        ]
+        modes: {
+          full: [
+            ["轻松步行", "可选 20-30 分钟", "steps"],
+            ["拉伸", "可选 10 分钟", "mobility"]
+          ],
+          lite: [
+            ["轻松步行", "可选 15-20 分钟", "steps"]
+          ]
+        },
+        minimum: "最低完成标准：休息日优先睡眠和恢复。"
       }
     ];
 
@@ -1176,22 +1269,170 @@
       localStorage.setItem(key, JSON.stringify(value));
     }
 
+    function getMode() {
+      return readJson(STORAGE_KEYS.mode, "full") === "lite" ? "lite" : "full";
+    }
+
+    function setMode(mode) {
+      writeJson(STORAGE_KEYS.mode, mode === "lite" ? "lite" : "full");
+    }
+
+    function itemsFor(day, mode = getMode()) {
+      return (day.modes && day.modes[mode]) || day.items || [];
+    }
+
+    function todayWorkout() {
+      const map = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+      const key = map[new Date().getDay()];
+      return workouts.find((w) => w.key === key) || workouts[0];
+    }
+
+    function renderTodayCard() {
+      const day = todayWorkout();
+      const mode = getMode();
+      const minutes = {
+        mon: { full: "45-50 分钟", lite: "25-30 分钟" },
+        tue: { full: "45-50 分钟", lite: "25-30 分钟" },
+        wed: { full: "35-45 分钟", lite: "20-30 分钟" },
+        thu: { full: "40-45 分钟", lite: "25-30 分钟" },
+        fri: { full: "35-45 分钟", lite: "20-25 分钟" },
+        sat: { full: "40-60 分钟", lite: "30-40 分钟" },
+        sun: { full: "恢复日", lite: "恢复日" }
+      };
+      const reminders = {
+        mon: "先完成推胸、肩推、侧平举，不追大重量。",
+        tue: "背部发力优先，动作顶峰停一下。",
+        wed: "恢复日不求累，能说完整句子就够。",
+        thu: "今天是补强，不是把周一周二重做一遍。",
+        fri: "腿日目标是维护，不是拼重量。",
+        sat: "有氧和步数二选一完成即可。",
+        sun: "今天把睡眠、补水和下周准备做好。"
+      };
+      document.getElementById("todayCard").innerHTML = `
+        <div class="today-grid">
+          <div class="stat"><b>${day.day}</b><span>${day.title}</span></div>
+          <div class="stat"><b>${mode === "full" ? "A 档" : "B 档"}</b><span>${mode === "full" ? "完整版" : "压缩版"}</span></div>
+          <div class="stat"><b>${minutes[day.key][mode]}</b><span>预计时长</span></div>
+          <div class="stat"><b>${day.key === "wed" || day.key === "sat" ? "要做有氧" : (day.key === "sun" ? "优先恢复" : "力量优先")}</b><span>今日重点</span></div>
+        </div>
+        <div class="today-actions">
+          <button class="btn ${mode === "full" ? "primary" : ""}" type="button" data-mode-switch="full">A 档</button>
+          <button class="btn ${mode === "lite" ? "primary" : ""}" type="button" data-mode-switch="lite">B 档</button>
+          <button class="btn" type="button" data-open-day="${day.key}">打开今日训练</button>
+        </div>
+        <div class="callout" style="margin-top: 12px;"><strong>今日提醒</strong><br />${reminders[day.key]}</div>
+      `;
+
+      document.querySelectorAll("[data-mode-switch]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          setMode(btn.dataset.modeSwitch);
+          renderTodayCard();
+          renderWorkout(document.querySelector(".tab.active")?.dataset.day || workouts[0].key);
+          renderWeeklyOverview();
+        });
+      });
+
+      const openBtn = document.querySelector("[data-open-day]");
+      if (openBtn) {
+        openBtn.addEventListener("click", () => {
+          renderWorkout(openBtn.dataset.openDay);
+          document.getElementById("schedule").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+    }
+
+    function doneKeysFor(dayKey, mode = getMode()) {
+      const day = workouts.find((item) => item.key === dayKey);
+      if (!day) return [];
+      return itemsFor(day, mode).map(([, , id], index) => `${day.key}-${mode}-${index}-${id}`);
+    }
+
+    function weekRange() {
+      const today = new Date();
+      const day = today.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      const start = new Date(today);
+      start.setHours(0, 0, 0, 0);
+      start.setDate(today.getDate() + diff);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      return { start, end };
+    }
+
+    function average(values) {
+      if (!values.length) return null;
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    }
+
+    function weeklyWeightDelta(records) {
+      const parsed = records
+        .filter((item) => item.weight)
+        .map((item) => ({ ...item, weightNum: Number(item.weight) }))
+        .filter((item) => !Number.isNaN(item.weightNum));
+      if (parsed.length < 4) return null;
+      const last7 = parsed.slice(-7);
+      const prev7 = parsed.slice(-14, -7);
+      if (!last7.length) return null;
+      const currentAvg = average(last7.map((item) => item.weightNum));
+      const prevAvg = prev7.length ? average(prev7.map((item) => item.weightNum)) : parsed[0].weightNum;
+      return Number((currentAvg - prevAvg).toFixed(1));
+    }
+
+    function renderWeeklyOverview() {
+      const done = readJson(STORAGE_KEYS.done, {});
+      const mode = getMode();
+      const strengthDays = ["mon", "tue", "thu", "fri"];
+      const cardioDays = ["wed", "sat"];
+      const strengthDone = strengthDays.filter((dayKey) => doneKeysFor(dayKey, mode).some((key) => done[key])).length;
+      const cardioDone = cardioDays.filter((dayKey) => doneKeysFor(dayKey, mode).some((key) => done[key])).length;
+      const completion = Math.round(((strengthDone + cardioDone) / 6) * 100);
+      const records = readJson(STORAGE_KEYS.records, []);
+      const delta = weeklyWeightDelta(records);
+      document.getElementById("strengthProgress").textContent = `${strengthDone} / 4`;
+      document.getElementById("cardioProgress").textContent = `${cardioDone} / 2`;
+      document.getElementById("weekCompletion").textContent = `${completion}%`;
+      document.getElementById("weekWeightDelta").textContent = delta === null ? "--" : `${delta > 0 ? "+" : ""}${delta}kg`;
+
+      const summary = strengthDone >= 4
+        ? "本周力量训练已经到位，接下来优先把有氧或步数补齐。"
+        : strengthDone >= 2
+          ? "力量训练完成过半，先把频率守住，不急着继续压热量。"
+          : "本周力量完成偏低，先保住训练次数，再谈更激进的热量调整。";
+      document.getElementById("weeklySummary").innerHTML = `<strong>本周节奏</strong><br />${summary}`;
+
+      let adjustment = "数据不足时先专注执行，至少连续记录 7 天再调整热量。";
+      if (delta !== null) {
+        if (delta <= -0.4 && delta >= -0.6) {
+          adjustment = "下降在目标区间，维持当前训练和饮食，不需要额外加码。";
+        } else if (delta > -0.2 && completion >= 70) {
+          adjustment = "执行基本到位但下降偏慢，建议每日减少 100-150 kcal 或每天多走 2000 步。";
+        } else if (delta < -0.8) {
+          adjustment = "下降偏快，优先增加训练日前后碳水，避免力量和恢复继续下滑。";
+        } else if (completion < 70) {
+          adjustment = "本周先提高训练完成率，不急着继续压热量。";
+        }
+      }
+      document.getElementById("adjustmentCard").innerHTML = `<strong>本周调整建议</strong><br />${adjustment}`;
+    }
+
     function renderWorkout(dayKey = workouts[0].key) {
       const day = workouts.find((w) => w.key === dayKey) || workouts[0];
+      const mode = getMode();
+      const itemsSource = itemsFor(day, mode);
       const done = readJson(STORAGE_KEYS.done, {});
       const exerciseIds = new Set(exercises.map((exercise) => exercise.id));
       document.querySelectorAll(".tab").forEach((btn) => btn.classList.toggle("active", btn.dataset.day === day.key));
 
-      const items = day.items.map(([name, reps, id, mode, group], index) => {
-        const doneKey = `${day.key}-${index}-${id}`;
-        const isRadio = day.choiceMode || mode === "radio";
-        const radioGroup = group || day.key;
+      const items = itemsSource.map(([name, reps, id, modeFlag, group], index) => {
+        const doneKey = `${day.key}-${mode}-${index}-${id}`;
+        const isRadio = day.choiceMode || modeFlag === "radio";
+        const radioGroup = group || `${day.key}-${mode}`;
         const inputType = isRadio ? "radio" : "checkbox";
         const inputName = isRadio ? `name="choice-${radioGroup}"` : "";
         const actionButton = exerciseIds.has(id) ? `<button class="btn" type="button" data-jump="${id}">看动作</button>` : "";
         const isOptional = /^可选/.test(name) || /可选/.test(reps);
         const inlineChoice = /二选一|任选|可替代/.test(name);
-        const choiceLabel = day.choiceMode ? `${day.items.length}选一` : (isRadio || inlineChoice ? "二选一" : (isOptional ? "可选" : "必做"));
+        const choiceLabel = day.choiceMode ? `${itemsSource.length}选一` : (isRadio || inlineChoice ? "二选一" : (isOptional ? "可选" : "必做"));
         const choiceClass = isRadio || day.choiceMode || inlineChoice ? "choice" : (isOptional ? "optional" : "");
         const cleanName = name.replace(/^选项 [A-Z]：/, "").replace(/^可选：/, "");
         const optionMatch = name.match(/^选项 ([A-Z])：/);
@@ -1216,12 +1457,31 @@
         <div class="day-grid">
           <div class="day-label">${day.day}</div>
           <div class="workout">
-            <h3>${day.title}</h3>
-            <p>${day.focus}</p>
+            <div class="workout-topbar">
+              <div>
+                <h3>${day.title}</h3>
+                <p>${day.focus}</p>
+              </div>
+              <div class="mode-toggle">
+                <button class="btn ${mode === "full" ? "primary" : ""}" type="button" data-mode-switch="full">A 档</button>
+                <button class="btn ${mode === "lite" ? "primary" : ""}" type="button" data-mode-switch="lite">B 档</button>
+              </div>
+            </div>
+            <div class="callout" style="margin-bottom: 12px;"><strong>${mode === "full" ? "A 档" : "B 档"}</strong>：${mode === "full" ? "完整版，适合时间和状态都在线时完成。" : "压缩版，适合加班、晚开始或恢复欠佳时保底完成。"}</div>
             <ul class="exercise-list">${items}</ul>
+            <div class="callout warn" style="margin-top: 12px;"><strong>最低完成标准</strong><br />${day.minimum || "先完成主动作。"}</div>
           </div>
         </div>
       `;
+
+      document.querySelectorAll("[data-mode-switch]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          setMode(btn.dataset.modeSwitch);
+          renderTodayCard();
+          renderWorkout(day.key);
+          renderWeeklyOverview();
+        });
+      });
 
       document.querySelectorAll("[data-done-key]").forEach((box) => {
         box.addEventListener("change", (event) => {
@@ -1229,19 +1489,21 @@
           const choiceGroup = event.target.dataset.choiceGroup;
           if (choiceGroup) {
             Object.keys(latest).forEach((key) => {
-              const sameGroup = day.items.some(([itemName, itemReps, itemId, itemMode, itemGroup], itemIndex) => {
-                return (itemGroup || day.key) === choiceGroup && key === `${day.key}-${itemIndex}-${itemId}`;
+              const sameGroup = itemsSource.some(([itemName, itemReps, itemId, itemMode, itemGroup], itemIndex) => {
+                return (itemGroup || `${day.key}-${mode}`) === choiceGroup && key === `${day.key}-${mode}-${itemIndex}-${itemId}`;
               });
               if (sameGroup) delete latest[key];
             });
             latest[event.target.dataset.doneKey] = true;
             writeJson(STORAGE_KEYS.done, latest);
             renderWorkout(day.key);
+            renderWeeklyOverview();
             return;
           }
           latest[event.target.dataset.doneKey] = event.target.checked;
           writeJson(STORAGE_KEYS.done, latest);
           event.target.closest(".exercise-item").classList.toggle("done", event.target.checked);
+          renderWeeklyOverview();
         });
       });
 
@@ -1392,14 +1654,31 @@
     function renderRecords() {
       const rows = readJson(STORAGE_KEYS.records, []);
       const tbody = document.getElementById("trackerRows");
+      const weightRows = rows.map((row) => Number(row.weight)).filter((value) => !Number.isNaN(value));
+      document.getElementById("recordCount").textContent = String(rows.length);
+      document.getElementById("avgWeight").textContent = weightRows.length ? `${average(weightRows.slice(-7)).toFixed(1)} kg` : "--";
+
+      const delta = weeklyWeightDelta(rows);
+      const latestSleep = rows.slice().reverse().find((item) => item.sleep)?.sleep;
+      let trendText = "暂无足够数据，先连续记录 7 天体重。";
+      if (delta !== null) {
+        trendText = `最近 7 日均重变化 ${delta > 0 ? "+" : ""}${delta}kg。`;
+        if (delta <= -0.4 && delta >= -0.6) trendText += " 下降在目标区间，先保持。";
+        else if (delta > -0.2) trendText += " 下降偏慢，优先检查执行率、步数和晚间饮食。";
+        else if (delta < -0.8) trendText += " 下降偏快，留意恢复和力量表现。";
+      }
+      if (latestSleep) trendText += ` 最近一次睡眠记录：${latestSleep}。`;
+      document.getElementById("trendSummary").innerHTML = `<strong>趋势摘要</strong><br />${trendText}`;
+
       if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="4">暂无记录。建议每天早起上厕所后称重，重点看 7 日平均体重。</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5">暂无记录。建议每天早起上厕所后称重，重点看 7 日平均体重。</td></tr>`;
         return;
       }
       tbody.innerHTML = rows.slice().reverse().map((r) => `
         <tr>
           <td>${r.date}</td>
           <td>${r.weight ? `${r.weight} kg` : "-"}</td>
+          <td>${r.sleep || "-"}</td>
           <td>${r.note || "-"}</td>
           <td>${r.trend}</td>
         </tr>
@@ -1415,6 +1694,7 @@
         const entry = {
           date: document.getElementById("dateInput").value,
           weight,
+          sleep: document.getElementById("sleepInput").value,
           note: document.getElementById("noteInput").value.trim(),
           trend: trendLabel(records, weight)
         };
@@ -1423,6 +1703,7 @@
         withoutSameDate.sort((a, b) => a.date.localeCompare(b.date));
         writeJson(STORAGE_KEYS.records, withoutSameDate);
         renderRecords();
+        renderWeeklyOverview();
         event.target.reset();
         document.getElementById("dateInput").value = todayISO();
       });
@@ -1431,6 +1712,7 @@
         if (confirm("确认清空体重记录？训练勾选不会被清空。")) {
           localStorage.removeItem(STORAGE_KEYS.records);
           renderRecords();
+          renderWeeklyOverview();
         }
       });
 
@@ -1467,11 +1749,13 @@
     });
 
     renderTabs();
-    renderWorkout();
+    renderTodayCard();
+    renderWorkout(todayWorkout().key);
     renderFilters();
     renderLibrary();
     initTracker();
     renderRecords();
+    renderWeeklyOverview();
     initNav();
   </script>
 </body>
